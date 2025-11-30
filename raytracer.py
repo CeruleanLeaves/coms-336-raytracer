@@ -56,6 +56,7 @@ def main():
 
     width = 400
     height = 225
+    samples_per_pixel = 20
 
     image = np.zeros(shape=(height, width, 3), dtype=np.float32)
 
@@ -73,13 +74,16 @@ def main():
 
     for row in range(height):
         for col in range(width):
-            x = col / (width - 1)
-            y = (height - 1 - row) / (height - 1)
+            pixel_color = np.array([0, 0, 0], dtype=np.float32)
+            for _ in range(samples_per_pixel):
+                x = (col + np.random.rand()) / (width - 1)
+                y = (height - 1 - row + np.random.rand()) / (height - 1)
 
-            direction = lower_left_vertice + x * horizontal + y * vertical - origin
-            ray = Ray(origin, direction)
-            pixel_color = ray_to_sky_color(ray)
-            
+                direction = lower_left_vertice + x * horizontal + y * vertical - origin
+                ray = Ray(origin, direction)
+                pixel_color += ray_to_sky_color(ray)
+
+            pixel_color /= samples_per_pixel    
             image[row, col, :] = pixel_color
 
     image_uint8 = (np.clip(image, 0.0, 1.0) * 255).astype(np.uint8)
