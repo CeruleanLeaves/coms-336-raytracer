@@ -2,7 +2,35 @@ import numpy as np
 from PIL import Image
 
 from camera import Camera
-from ray import Ray, ray_to_sky_color
+from ray import Ray, normalize
+from sphere import Sphere
+
+def ray_color(ray: Ray, world: list[Sphere]) -> np.ndarray:
+
+    shortest_hit_time = float('inf')
+    hit_record = None
+
+    for sphere in world:
+        hit = sphere.hit(ray, 1e-3, shortest_hit_time)
+        if hit:
+            shortest_hit_time = hit.time
+            hit_record = hit
+    
+    if hit_record:
+        normal = hit_record.normal
+        material_base_color = hit_record.base_color
+        light_direction = normalize(np.array([1.0, 1.0, -0.5], dtype=np.float32))
+        diffuse_intensity = max(np.dot(normal, light_direction), 0.0)
+        ambient = 0.3
+        color = ambient * material_base_color + diffuse_intensity * material_base_color
+        color = np.clip(color, 0.0, 1.0)
+        return color
+
+    unit_direction = normalize(ray.direction)
+    blueness = .5 * (unit_direction[1] + 1.0)
+    white = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    blue  = np.array([0.5, 0.7, 1.0], dtype=np.float32)
+    return blueness * blue + (1 - blueness) * white
 
 def main():
 
@@ -20,6 +48,28 @@ def main():
 
     camera = Camera(camera_position, camera_look_at_point, up_direction, vertical_fov_degrees, aspect_ratio)
 
+    world = [
+        Sphere(
+            center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
+            radius=0.2,
+            base_color=np.array([0.8, 0.3, 0.3], dtype=np.float32),
+        ),
+        Sphere(
+            center=np.array([-1.0, 0.0, -2.0], dtype=np.float32),
+            radius=0.4,
+            base_color=np.array([0.3, 0.8, 0.3], dtype=np.float32),
+        ),
+        Sphere(
+            center=np.array([1.0, 0.0, -2.0], dtype=np.float32),
+            radius=0.5,
+            base_color=np.array([0.3, 0.3, 0.8], dtype=np.float32),
+        ),
+        Sphere(
+            center=np.array([0.0, -100.5, -1.0], dtype=np.float32),
+            radius=100.0,
+            base_color=np.array([0.8, 0.8, 0.0], dtype=np.float32),
+        ),
+    ]
 
     for row in range(height):
         for col in range(width):
@@ -29,7 +79,7 @@ def main():
                 vertical_percentage = (height - 1 - row + np.random.rand()) / (height - 1)
 
                 ray = camera.get_ray(horizontal_percentage, vertical_percentage)
-                pixel_color += ray_to_sky_color(ray)
+                pixel_color += ray_color(ray, world)
 
             pixel_color /= samples_per_pixel    
             image[row, col, :] = pixel_color
