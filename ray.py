@@ -43,7 +43,13 @@ def ray_to_sky_color(ray: Ray) -> np.ndarray:
     if time_hit_sphere:
         position_hit_sphere = ray.position(time_hit_sphere)
         normal = normalize(position_hit_sphere - random_sphere_center)
-        return 0.5 * (normal + 1.0)
+        light_direction = normalize(np.array([1.0, 1.0, -0.5], dtype=np.float32))
+        diffuse_intensity = max(np.dot(normal, light_direction), 0.0)
+        material_base_color = np.array([0.8, 0.3, 0.3], dtype=np.float32)
+        ambient = 0.3
+        color = ambient * material_base_color + diffuse_intensity * material_base_color
+        color = np.clip(color, 0.0, 1.0)
+        return color
 
     unit_direction = normalize(ray.direction)
     blueness = .5 * (unit_direction[1] + 1.0)
