@@ -4,11 +4,19 @@ from hit_record import HitRecord
 from ray import Ray, normalize
 
 class Sphere:
-    def __init__(self, center: np.ndarray, radius: float, base_color: np.ndarray, is_mirror: bool = False):
+    def __init__(self,
+                 center: np.ndarray,
+                 radius: float,
+                 base_color: np.ndarray,
+                 is_mirror: bool = False,
+                 is_dielectric: bool = False,
+                 refraction_index: float = 1.0):
         self.center = center
         self.radius = radius
         self.base_color = base_color
         self.is_mirror = is_mirror
+        self.is_dielectric = is_dielectric
+        self.refraction_index = refraction_index
     
     def hit(self, ray: Ray, time_min: float, time_max: float) -> HitRecord | None:
         o_minus_c = ray.origin - self.center
@@ -28,12 +36,18 @@ class Sphere:
                 return None
         
         hit_point = ray.position(hit_time)
-        normal = normalize(hit_point - self.center)
+        outward_normal = normalize(hit_point - self.center)
+
+        front_face = np.dot(ray.direction, outward_normal) < 0.0
+        normal = outward_normal if front_face else -outward_normal
 
         return HitRecord(
             time=hit_time,
             point=hit_point,
             normal=normal,
             base_color=self.base_color,
-            is_mirror=self.is_mirror
+            is_mirror=self.is_mirror,
+            is_dielectric=self.is_dielectric,
+            refraction_index=self.refraction_index,
+            front_face=front_face
         )

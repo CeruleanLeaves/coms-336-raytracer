@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 def normalize(vector: np.ndarray) -> np.ndarray:
     norm = np.linalg.norm(vector)
@@ -6,9 +7,19 @@ def normalize(vector: np.ndarray) -> np.ndarray:
         return vector / norm
     return vector
 
-def reflect(vector: np.ndarray, normal: np.ndarray) -> np.ndarray:
-    return vector - 2.0 * np.dot(vector, normal) * normal #Vector has to be normalized
+def reflect(unit_vector: np.ndarray, normal: np.ndarray) -> np.ndarray:
+    return unit_vector - 2.0 * np.dot(unit_vector, normal) * normal 
 
+def refract(unit_vector: np.ndarray, normal: np.ndarray, refraction_index_ratio: float) -> np.ndarray:
+    cos_theta = min(np.dot(-unit_vector, normal), 1.0)
+    res_vector_perpendicular = (unit_vector + cos_theta * normal) + refraction_index_ratio
+    res_vector_parallel = normal * -math.sqrt(max(0.0, 1.0 - np.dot(res_vector_perpendicular, res_vector_perpendicular)))
+    return res_vector_parallel + res_vector_perpendicular
+
+def schlick(cosine: float, refraction_index: float) -> float:
+    r0 = (1.0 - refraction_index) / (1.0 + refraction_index) ** 2
+    return r0 + (1.0 - r0) * ((1.0 - cosine) ** 5)
+    
 class Ray:
     def __init__(self, origin: np.ndarray, direction: np.ndarray):
         self.origin = origin

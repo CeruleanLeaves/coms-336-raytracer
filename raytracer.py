@@ -1,8 +1,9 @@
+import math
 import numpy as np
 from PIL import Image
 
 from camera import Camera
-from ray import Ray, normalize, reflect
+from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
 
 MAX_DEPTH = 10
@@ -25,8 +26,30 @@ def ray_color(ray: Ray, world: list[Sphere], depth: int) -> np.ndarray:
         normal = hit_record.normal
         material_base_color = hit_record.base_color
         
-        if hit_record.is_mirror:
-            incoming_direction = normalize(ray.direction)
+        incoming_direction = normalize(ray.direction)
+        if hit_record.is_dielectric:
+            if hit_record.front_face:
+                refraction_ratio = 1.0 / hit_record.refraction_index
+            else:
+                refraction_ratio = hit_record.refraction_index
+            
+            cos_theta = min(np.dot(-incoming_direction, normal), 1.0)
+            sin_theta = math.sqrt(max(1.0 - cos_theta ** 2, 0.0))
+
+            #other sin value in Snell
+            do_not_refract = refraction_ratio * sin_theta > 1.0
+
+            reflect_probability = schlick(cos_theta, hit_record.refraction_index)
+            use_reflect = do_not_refract or (np.random.rand() < reflect_probability)
+            if use_reflect:
+                new_direction = reflect(incoming_direction, normal)
+            else:
+                new_direction = refract(incoming_direction, normal, refraction_ratio)
+            
+            new_origin = hit_record.point + normal * 1e-3
+            new_ray = Ray(new_origin, new_direction)
+            return ray_color(new_ray, world, depth + 1)
+        elif hit_record.is_mirror:
             reflected_direction = reflect(incoming_direction, normal)
             reflected_origin = hit_record.point + normal * 1e-3
             reflected_ray = Ray(reflected_origin, reflected_direction)
@@ -74,6 +97,8 @@ def main():
             center=np.array([-1.0, 0.0, -2.0], dtype=np.float32),
             radius=0.4,
             base_color=np.array([0.3, 0.8, 0.3], dtype=np.float32),
+            is_dielectric=True,
+            refraction_index=1.5
         ),
         Sphere(
             center=np.array([1.0, 0.0, -2.0], dtype=np.float32),

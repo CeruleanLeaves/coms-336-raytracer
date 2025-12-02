@@ -9,3 +9,6 @@ class HitRecord:
     normal: np.ndarray
     base_color: np.ndarray
     is_mirror: bool
+    is_dielectric: bool
+    refraction_index: float
+    front_face: bool
