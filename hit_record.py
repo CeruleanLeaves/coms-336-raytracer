@@ -1,5 +1,10 @@
+from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from materials import Material
 
 
 @dataclass
@@ -7,8 +12,5 @@ class HitRecord:
     time: float
     point: np.ndarray
     normal: np.ndarray
-    base_color: np.ndarray
-    is_mirror: bool
-    is_dielectric: bool
-    refraction_index: float
+    material: Material
     front_face: bool

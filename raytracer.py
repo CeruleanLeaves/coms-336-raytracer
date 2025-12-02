@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 
 from camera import Camera
+from materials import Dielectric, Lambertian, Metal
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
 
@@ -23,46 +24,10 @@ def ray_color(ray: Ray, world: list[Sphere], depth: int) -> np.ndarray:
             hit_record = hit
     
     if hit_record:
-        normal = hit_record.normal
-        material_base_color = hit_record.base_color
-        
-        incoming_direction = normalize(ray.direction)
-        if hit_record.is_dielectric:
-            if hit_record.front_face:
-                refraction_ratio = 1.0 / hit_record.refraction_index
-            else:
-                refraction_ratio = hit_record.refraction_index
-            
-            cos_theta = min(np.dot(-incoming_direction, normal), 1.0)
-            sin_theta = math.sqrt(max(1.0 - cos_theta ** 2, 0.0))
-
-            #other sin value in Snell
-            do_not_refract = refraction_ratio * sin_theta > 1.0
-
-            reflect_probability = schlick(cos_theta, hit_record.refraction_index)
-            use_reflect = do_not_refract or (np.random.rand() < reflect_probability)
-            if use_reflect:
-                new_direction = reflect(incoming_direction, normal)
-            else:
-                new_direction = refract(incoming_direction, normal, refraction_ratio)
-            
-            new_origin = hit_record.point + normal * 1e-3
-            new_ray = Ray(new_origin, new_direction)
-            return ray_color(new_ray, world, depth + 1)
-        elif hit_record.is_mirror:
-            reflected_direction = reflect(incoming_direction, normal)
-            reflected_origin = hit_record.point + normal * 1e-3
-            reflected_ray = Ray(reflected_origin, reflected_direction)
-            
-            reflected_color = ray_color(reflected_ray, world, depth + 1)
-            return np.clip(material_base_color * reflected_color, 0.0, 1.0)
-        else:
-            light_direction = normalize(np.array([1.0, 1.0, -0.5], dtype=np.float32))
-            diffuse_intensity = max(np.dot(normal, light_direction), 0.0)
-            ambient = 0.3
-            color = ambient * material_base_color + diffuse_intensity * material_base_color
-            color = np.clip(color, 0.0, 1.0)
-            return color
+        attenuation, scatter_ray = hit_record.material.scatter(ray, hit_record)
+        if attenuation is None or scatter_ray is None:
+            return np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        return attenuation * ray_color(scatter_ray, world, depth + 1)
 
     unit_direction = normalize(ray.direction)
     blueness = .5 * (unit_direction[1] + 1.0)
@@ -86,29 +51,30 @@ def main():
 
     camera = Camera(camera_position, camera_look_at_point, up_direction, vertical_fov_degrees, aspect_ratio)
 
+    material_ground = Lambertian(np.array([0.8, 0.8, 0.0], dtype=np.float32))
+    material_center = Dielectric(1.5)  # glass center
+    material_left   = Lambertian(np.array([0.8, 0.3, 0.3], dtype=np.float32))
+    material_right  = Metal(np.array([0.9, 0.9, 0.9], dtype=np.float32), fuzz=0.0)
     world = [
         Sphere(
             center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
             radius=0.2,
-            base_color=np.array([0.8, 0.3, 0.3], dtype=np.float32),
-            is_mirror=True
+            material=material_center
         ),
         Sphere(
             center=np.array([-1.0, 0.0, -2.0], dtype=np.float32),
             radius=0.4,
-            base_color=np.array([0.3, 0.8, 0.3], dtype=np.float32),
-            is_dielectric=True,
-            refraction_index=1.5
+            material=material_left
         ),
         Sphere(
             center=np.array([1.0, 0.0, -2.0], dtype=np.float32),
             radius=0.5,
-            base_color=np.array([0.3, 0.3, 0.8], dtype=np.float32),
+            material=material_right
         ),
         Sphere(
             center=np.array([0.0, -100.5, -1.0], dtype=np.float32),
             radius=100.0,
-            base_color=np.array([0.8, 0.8, 0.0], dtype=np.float32),
+            material=material_ground
         ),
     ]
 

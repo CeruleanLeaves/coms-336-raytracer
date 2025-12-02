@@ -19,6 +19,15 @@ def refract(unit_vector: np.ndarray, normal: np.ndarray, refraction_index_ratio:
 def schlick(cosine: float, refraction_index: float) -> float:
     r0 = (1.0 - refraction_index) / (1.0 + refraction_index) ** 2
     return r0 + (1.0 - r0) * ((1.0 - cosine) ** 5)
+
+def random_point_in_unit_sphere() -> np.ndarray:
+    while True:
+        point = np.random.uniform(-1.0, 1.0, size=3).astype(np.float32)
+        if np.dot(point, point) < 1.0:
+            return point
+
+def random_unit_vector() -> np.ndarray:
+    return normalize(random_point_in_unit_sphere())
     
 class Ray:
     def __init__(self, origin: np.ndarray, direction: np.ndarray):
