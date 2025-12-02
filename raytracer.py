@@ -2,10 +2,15 @@ import numpy as np
 from PIL import Image
 
 from camera import Camera
-from ray import Ray, normalize
+from ray import Ray, normalize, reflect
 from sphere import Sphere
 
-def ray_color(ray: Ray, world: list[Sphere]) -> np.ndarray:
+MAX_DEPTH = 10
+
+def ray_color(ray: Ray, world: list[Sphere], depth: int) -> np.ndarray:
+
+    if depth >= MAX_DEPTH:
+        return np.array([0.0, 0.0, 0.0], dtype=np.float32)
 
     shortest_hit_time = float('inf')
     hit_record = None
@@ -19,12 +24,22 @@ def ray_color(ray: Ray, world: list[Sphere]) -> np.ndarray:
     if hit_record:
         normal = hit_record.normal
         material_base_color = hit_record.base_color
-        light_direction = normalize(np.array([1.0, 1.0, -0.5], dtype=np.float32))
-        diffuse_intensity = max(np.dot(normal, light_direction), 0.0)
-        ambient = 0.3
-        color = ambient * material_base_color + diffuse_intensity * material_base_color
-        color = np.clip(color, 0.0, 1.0)
-        return color
+        
+        if hit_record.is_mirror:
+            incoming_direction = normalize(ray.direction)
+            reflected_direction = reflect(incoming_direction, normal)
+            reflected_origin = hit_record.point + normal * 1e-3
+            reflected_ray = Ray(reflected_origin, reflected_direction)
+            
+            reflected_color = ray_color(reflected_ray, world, depth + 1)
+            return np.clip(material_base_color * reflected_color, 0.0, 1.0)
+        else:
+            light_direction = normalize(np.array([1.0, 1.0, -0.5], dtype=np.float32))
+            diffuse_intensity = max(np.dot(normal, light_direction), 0.0)
+            ambient = 0.3
+            color = ambient * material_base_color + diffuse_intensity * material_base_color
+            color = np.clip(color, 0.0, 1.0)
+            return color
 
     unit_direction = normalize(ray.direction)
     blueness = .5 * (unit_direction[1] + 1.0)
@@ -53,6 +68,7 @@ def main():
             center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
             radius=0.2,
             base_color=np.array([0.8, 0.3, 0.3], dtype=np.float32),
+            is_mirror=True
         ),
         Sphere(
             center=np.array([-1.0, 0.0, -2.0], dtype=np.float32),
@@ -79,7 +95,7 @@ def main():
                 vertical_percentage = (height - 1 - row + np.random.rand()) / (height - 1)
 
                 ray = camera.get_ray(horizontal_percentage, vertical_percentage)
-                pixel_color += ray_color(ray, world)
+                pixel_color += ray_color(ray, world, 0)
 
             pixel_color /= samples_per_pixel    
             image[row, col, :] = pixel_color

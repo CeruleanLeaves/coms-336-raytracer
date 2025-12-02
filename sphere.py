@@ -1,21 +1,14 @@
 import numpy as np
-from dataclasses import dataclass
 import math
-
+from hit_record import HitRecord
 from ray import Ray, normalize
 
-@dataclass
-class HitRecord:
-    time: float
-    point: np.ndarray
-    normal: np.ndarray
-    base_color: np.ndarray
-
 class Sphere:
-    def __init__(self, center: np.ndarray, radius: float, base_color: np.ndarray):
+    def __init__(self, center: np.ndarray, radius: float, base_color: np.ndarray, is_mirror: bool = False):
         self.center = center
         self.radius = radius
         self.base_color = base_color
+        self.is_mirror = is_mirror
     
     def hit(self, ray: Ray, time_min: float, time_max: float) -> HitRecord | None:
         o_minus_c = ray.origin - self.center
@@ -41,5 +34,6 @@ class Sphere:
             time=hit_time,
             point=hit_point,
             normal=normal,
-            base_color=self.base_color
+            base_color=self.base_color,
+            is_mirror=self.is_mirror
         )

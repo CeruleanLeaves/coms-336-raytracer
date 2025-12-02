@@ -6,6 +6,9 @@ def normalize(vector: np.ndarray) -> np.ndarray:
         return vector / norm
     return vector
 
+def reflect(vector: np.ndarray, normal: np.ndarray) -> np.ndarray:
+    return vector - 2.0 * np.dot(vector, normal) * normal #Vector has to be normalized
+
 class Ray:
     def __init__(self, origin: np.ndarray, direction: np.ndarray):
         self.origin = origin
