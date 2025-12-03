@@ -4,6 +4,7 @@ from PIL import Image
 
 from camera import Camera
 from materials import Dielectric, Emissive, Lambertian, Metal
+from mesh import Mesh
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
 from triangle import Triangle
@@ -61,6 +62,20 @@ def main():
     material_right  = Metal(np.array([0.9, 0.9, 0.9], dtype=np.float32), fuzz=0.0)
     material_light = Emissive(np.array([4.0, 4.0, 4.0], dtype=np.float32))
     material_triangle = Lambertian(np.array([0.3, 0.5, 0.8], dtype=np.float32))
+
+    material_mesh = Lambertian(np.array([0.1, 0.6, 0.9], dtype=np.float32))
+    vertices = np.array([
+        [-1.0, 0.0, -3.0],
+        [ 1.0, 0.0, -3.0],
+        [ 1.0, 2.0, -3.0],
+        [-1.0, 2.0, -3.0],
+    ], dtype=np.float32)
+    indices = [
+        (0, 1, 2),
+        (0, 2, 3),
+    ]
+    mesh_instance = Mesh.from_vertices_indices(vertices, indices, material_mesh)
+    
     world = [
         Sphere(
             center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
@@ -88,11 +103,12 @@ def main():
             material=material_light,
         ),
         Triangle(
-            v0=np.array([-3.0, -1.0, -3.0], dtype=np.float32),
-            v1=np.array([ 3.0, -1.0, -3.0], dtype=np.float32),
-            v2=np.array([ 0.0,  3.0, -3.0], dtype=np.float32),
+            v0=np.array([-5.0, -1.0, -3.0], dtype=np.float32),
+            v1=np.array([ -1.0, -1.0, -3.0], dtype=np.float32),
+            v2=np.array([ 0.0,  1.0, -3.0], dtype=np.float32),
             material=material_triangle,
         ),
+        mesh_instance
     ]
 
     for row in range(height):
