@@ -9,6 +9,9 @@ class Material:
     def scatter(self, incoming_ray: Ray, hit_record: HitRecord):
         raise NotImplementedError
     
+    def emitted(self):
+        return np.zeros(3, dtype=np.float32)
+    
 class Lambertian(Material):
     def __init__(self, base_color: np.ndarray):
         self.base_color = base_color
@@ -66,3 +69,13 @@ class Dielectric(Material):
         scatter_ray = Ray(hit_record.point + hit_record.normal * 1e-3, direction)
         attenuation = np.array([1.0, 1.0, 1.0], dtype=np.float32)
         return attenuation, scatter_ray
+    
+class Emissive(Material):
+    def __init__(self, emit_color: np.ndarray):
+        self.emit_color = emit_color
+
+    def scatter(self, incoming_ray: Ray, hit_record: HitRecord) -> tuple[None, None]:
+        return None, None
+    
+    def emitted(self):
+        return self.emit_color
