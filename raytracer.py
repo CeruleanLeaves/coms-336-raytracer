@@ -108,7 +108,8 @@ def main():
             v2=np.array([ 0.0,  1.0, -3.0], dtype=np.float32),
             material=material_triangle,
         ),
-        mesh_instance
+        mesh_instance,
+        Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh)
     ]
 
     for row in range(height):
