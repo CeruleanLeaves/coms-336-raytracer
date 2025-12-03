@@ -6,6 +6,7 @@ from camera import Camera
 from materials import Dielectric, Emissive, Lambertian, Metal
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
+from triangle import Triangle
 
 MAX_DEPTH = 10
 
@@ -15,8 +16,8 @@ def ray_color(ray: Ray, world: list[Sphere], depth: int) -> np.ndarray:
     shortest_hit_time = float('inf')
     hit_record = None
 
-    for sphere in world:
-        hit = sphere.hit(ray, 1e-3, shortest_hit_time)
+    for object in world:
+        hit = object.hit(ray, 1e-3, shortest_hit_time)
         if hit:
             shortest_hit_time = hit.time
             hit_record = hit
@@ -59,6 +60,7 @@ def main():
     material_left   = Lambertian(np.array([0.8, 0.3, 0.3], dtype=np.float32))
     material_right  = Metal(np.array([0.9, 0.9, 0.9], dtype=np.float32), fuzz=0.0)
     material_light = Emissive(np.array([4.0, 4.0, 4.0], dtype=np.float32))
+    material_triangle = Lambertian(np.array([0.3, 0.5, 0.8], dtype=np.float32))
     world = [
         Sphere(
             center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
@@ -84,6 +86,12 @@ def main():
             center=np.array([0.0, 3.0, -0.9], dtype=np.float32),
             radius=0.5,
             material=material_light,
+        ),
+        Triangle(
+            v0=np.array([-3.0, -1.0, -3.0], dtype=np.float32),
+            v1=np.array([ 3.0, -1.0, -3.0], dtype=np.float32),
+            v2=np.array([ 0.0,  3.0, -3.0], dtype=np.float32),
+            material=material_triangle,
         ),
     ]
 
