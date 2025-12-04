@@ -2,6 +2,7 @@ import math
 import numpy as np
 from PIL import Image
 
+from bvh_node import BVHNode
 from camera import Camera
 from materials import Dielectric, Emissive, Lambertian, Metal
 from mesh import Mesh
@@ -11,17 +12,9 @@ from triangle import Triangle
 
 MAX_DEPTH = 10
 
-def ray_color(ray: Ray, world: list[Sphere], depth: int) -> np.ndarray:
+def ray_color(ray: Ray, world: BVHNode, depth: int) -> np.ndarray:
 
-
-    shortest_hit_time = float('inf')
-    hit_record = None
-
-    for object in world:
-        hit = object.hit(ray, 1e-3, shortest_hit_time)
-        if hit:
-            shortest_hit_time = hit.time
-            hit_record = hit
+    hit_record = world.hit(ray, time_min=1e-3, time_max=float('inf'))
     
     if hit_record:
 
@@ -76,7 +69,7 @@ def main():
     ]
     mesh_instance = Mesh.from_vertices_indices(vertices, indices, material_mesh)
     
-    world = [
+    world = BVHNode([
         Sphere(
             center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
             radius=0.2,
@@ -110,7 +103,7 @@ def main():
         ),
         mesh_instance,
         Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh)
-    ]
+    ])
 
     for row in range(height):
         for col in range(width):

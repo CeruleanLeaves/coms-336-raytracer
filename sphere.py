@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from aabb import Axis_Aligned_Bounding_Box
 from hit_record import HitRecord
 from materials import Material
 from ray import Ray, normalize
@@ -43,3 +44,9 @@ class Sphere:
             material=self.material,
             front_face=front_face
         )
+    
+    def bounding_box(self) -> Axis_Aligned_Bounding_Box:
+        radius_vector = np.array([self.radius, self.radius, self.radius], dtype=np.float32)
+        minimum_vertice = self.center - radius_vector
+        maximum_vertice = self.center + radius_vector
+        return Axis_Aligned_Bounding_Box(minimum_vertice, maximum_vertice)

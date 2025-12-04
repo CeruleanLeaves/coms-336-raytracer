@@ -1,5 +1,6 @@
 import numpy as np
 
+from aabb import Axis_Aligned_Bounding_Box
 from hit_record import HitRecord
 from materials import Material
 from ray import Ray, normalize
@@ -61,3 +62,12 @@ class Triangle:
             material=self.material,
             front_face=front_face
         )
+    
+    def bounding_box(self) -> Axis_Aligned_Bounding_Box:
+        minimum_vertice = np.minimum(np.minimum(self.v0, self.v1), self.v2)
+        maximum_vertice = np.maximum(np.maximum(self.v0, self.v1), self.v2)
+        #padding if one of the x y or z of the triangle vertices are all the same
+        padding = 1e-3
+        minimum_vertice -= padding
+        maximum_vertice += padding
+        return Axis_Aligned_Bounding_Box(minimum_vertice, maximum_vertice)

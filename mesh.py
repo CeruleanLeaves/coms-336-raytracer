@@ -1,4 +1,7 @@
+from typing import Self
 import numpy as np
+from aabb import Axis_Aligned_Bounding_Box
+from bvh_node import BVHNode
 from materials import Material
 from ray import Ray
 from triangle import Triangle
@@ -6,10 +9,10 @@ from triangle import Triangle
 
 class Mesh:
     def __init__(self, triangles: list[Triangle]):
-        self.triangles = triangles
+        self.bvh = BVHNode(triangles)
 
     @classmethod
-    def from_vertices_indices(cls, vertices: np.ndarray, indices: list[tuple[int, int, int]], material: Material):
+    def from_vertices_indices(cls, vertices: np.ndarray, indices: list[tuple[int, int, int]], material: Material) -> Self:
         triangles = []
         for i0, i1, i2, in indices:
             v0 = vertices[i0]
@@ -20,7 +23,7 @@ class Mesh:
         return cls(triangles)
     
     @classmethod
-    def load_from_file(cls, file_path: str, material: Material):
+    def load_from_file(cls, file_path: str, material: Material) -> Self:
         vertices = []
         indices = []
 
@@ -65,13 +68,7 @@ class Mesh:
         return cls.from_vertices_indices(vertices_np, indices, material)
 
     def hit(self, ray: Ray, time_min: float, time_max: float):
-        closest_time = time_max
-        hit_record = None
-
-        for triangle in self.triangles:
-            hit = triangle.hit(ray, time_min, time_max)
-            if hit and hit.time < closest_time:
-                closest_time = hit.time
-                hit_record = hit
-
-        return hit_record
+        return self.bvh.hit(ray, time_min, time_max)
+    
+    def bounding_box(self) -> Axis_Aligned_Bounding_Box:
+        return self.bvh.box
