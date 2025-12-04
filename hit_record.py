@@ -14,3 +14,4 @@ class HitRecord:
     normal: np.ndarray
     material: Material
     front_face: bool
+    texture_coordinates: np.ndarray | None = None

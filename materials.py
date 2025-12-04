@@ -3,6 +3,7 @@ import numpy as np
 
 from hit_record import HitRecord
 from ray import Ray, normalize, random_point_in_unit_sphere, random_unit_vector, reflect, refract, schlick
+from texture import Texture
 
 
 class Material:
@@ -13,16 +14,22 @@ class Material:
         return np.zeros(3, dtype=np.float32)
     
 class Lambertian(Material):
-    def __init__(self, base_color: np.ndarray):
+    def __init__(self, base_color: np.ndarray = np.array([0.0, 0.0, 0.0], dtype=np.float32),
+                 texture: Texture | None = None):
         self.base_color = base_color
-    
+        self.texture = texture 
+
     def scatter(self, incoming_ray: Ray, hit_record: HitRecord):
         scatter_direction = hit_record.normal + random_unit_vector()
         if np.allclose(scatter_direction, 0.0):
             scatter_direction = hit_record.normal
+
+        if self.texture is not None and hit_record.texture_coordinates is not None:
+            attenuation = self.texture.sample(hit_record.texture_coordinates[0], hit_record.texture_coordinates[1])
+        else:
+            attenuation = self.base_color
         
         scatter_ray = Ray(hit_record.point + hit_record.normal * 1e-3, scatter_direction)
-        attenuation = self.base_color
         return attenuation, scatter_ray
 
 class Metal(Material):

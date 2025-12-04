@@ -8,6 +8,7 @@ from materials import Dielectric, Emissive, Lambertian, Metal
 from mesh import Mesh
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
+from texture import ImageTexture
 from triangle import Triangle
 
 MAX_DEPTH = 10
@@ -54,7 +55,12 @@ def main():
     material_left   = Lambertian(np.array([0.8, 0.3, 0.3], dtype=np.float32))
     material_right  = Metal(np.array([0.9, 0.9, 0.9], dtype=np.float32), fuzz=0.0)
     material_light = Emissive(np.array([4.0, 4.0, 4.0], dtype=np.float32))
-    material_triangle = Lambertian(np.array([0.3, 0.5, 0.8], dtype=np.float32))
+
+    dry_riverbed_texture = ImageTexture('textures/dry_riverbed_rock.jpg')
+    material_triangle = Lambertian(texture=dry_riverbed_texture)
+
+    rocky_terrain_texture = ImageTexture('textures/rocky_terrain.jpg')
+    material_rocky_terrain = Lambertian(texture=rocky_terrain_texture)
 
     material_mesh = Lambertian(np.array([0.1, 0.6, 0.9], dtype=np.float32))
     vertices = np.array([
@@ -88,7 +94,7 @@ def main():
         Sphere(
             center=np.array([0.0, -100.5, -1.0], dtype=np.float32),
             radius=100.0,
-            material=material_ground
+            material=material_rocky_terrain
         ),
         Sphere(
             center=np.array([0.0, 3.0, -0.9], dtype=np.float32),
@@ -100,6 +106,9 @@ def main():
             v1=np.array([ -1.0, -1.0, -3.0], dtype=np.float32),
             v2=np.array([ 0.0,  1.0, -3.0], dtype=np.float32),
             material=material_triangle,
+            texture_xy0=np.array([0.0, 0.0], dtype=np.float32),
+            texture_xy1=np.array([0.0, 0.8], dtype=np.float32),
+            texture_xy2=np.array([0.4, 1.0], dtype=np.float32)
         ),
         mesh_instance,
         Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh)

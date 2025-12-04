@@ -11,7 +11,10 @@ class Triangle:
                  v0: np.ndarray,
                  v1: np.ndarray,
                  v2: np.ndarray,
-                 material: Material):
+                 material: Material,
+                 texture_xy0: np.ndarray | None = None,
+                 texture_xy1: np.ndarray | None = None,
+                 texture_xy2: np.ndarray | None = None):
         self.v0 = v0
         self.v1 = v1
         self.v2 = v2
@@ -19,6 +22,9 @@ class Triangle:
         self.e2 = v2 - v0
         self.material = material
         self.normal = np.cross(v1 - v0, v2 - v0)
+        self.texture_xy0 = texture_xy0
+        self.texture_xy1 = texture_xy1
+        self.texture_xy2 = texture_xy2
     
     def hit(self, ray: Ray, time_min: float, time_max: float) -> HitRecord | None:
         #triple product scaler
@@ -55,12 +61,19 @@ class Triangle:
         front_face = np.dot(ray.direction, outward_normal) < 0.0
         normal = outward_normal if front_face else -outward_normal
 
+        texture_xy = None
+        if self.texture_xy0 is not None and self.texture_xy1 is not None and self.texture_xy2 is not None:
+            texture_xy = ((1.0 - u - v) * self.texture_xy0
+                          + u * self.texture_xy1
+                          + v * self.texture_xy2)
+
         return HitRecord(
             time=time,
             point=point,
             normal=normal,
             material=self.material,
-            front_face=front_face
+            front_face=front_face,
+            texture_coordinates=texture_xy
         )
     
     def bounding_box(self) -> Axis_Aligned_Bounding_Box:

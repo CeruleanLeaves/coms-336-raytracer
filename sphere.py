@@ -37,12 +37,16 @@ class Sphere:
         front_face = np.dot(ray.direction, outward_normal) < 0.0
         normal = outward_normal if front_face else -outward_normal
 
+        local_point = (hit_point - self.center) / self.radius
+        texture_coordinates = self.sphere_texture_coordinates(local_point)
+
         return HitRecord(
             time=hit_time,
             point=hit_point,
             normal=normal,
             material=self.material,
-            front_face=front_face
+            front_face=front_face,
+            texture_coordinates=texture_coordinates
         )
     
     def bounding_box(self) -> Axis_Aligned_Bounding_Box:
@@ -50,3 +54,12 @@ class Sphere:
         minimum_vertice = self.center - radius_vector
         maximum_vertice = self.center + radius_vector
         return Axis_Aligned_Bounding_Box(minimum_vertice, maximum_vertice)
+    
+    @staticmethod
+    def sphere_texture_coordinates(local_point: np.ndarray) -> np.ndarray:
+        x, y, z = local_point[0], local_point[1], local_point[2]
+        theta = math.acos(-y)
+        phi = math.atan2(-z, x) + math.pi
+        texture_x = phi / (2.0 * math.pi)
+        texture_y = theta / math.pi
+        return np.array([texture_x, texture_y], dtype=np.float32)
