@@ -30,9 +30,10 @@ def random_unit_vector() -> np.ndarray:
     return normalize(random_point_in_unit_sphere())
     
 class Ray:
-    def __init__(self, origin: np.ndarray, direction: np.ndarray):
+    def __init__(self, origin: np.ndarray, direction: np.ndarray, time: float = 0.0):
         self.origin = origin
         self.direction = direction
+        self.time = time
     
     def position(self, time: float) -> np.ndarray:
         return self.origin + self.direction * time

@@ -6,6 +6,7 @@ from bvh_node import BVHNode
 from camera import Camera
 from materials import Dielectric, Emissive, Lambertian, Metal
 from mesh import Mesh
+from moving_sphere import MovingSphere
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
 from texture import ImageTexture
@@ -47,8 +48,18 @@ def main():
     camera_look_at_point = np.array([0.0, 0.0, -1.0], dtype=np.float32)
     up_direction = np.array([0.0, 1.0, 0.0], dtype=np.float32)
     vertical_fov_degrees = 90.0
+    aperture = 0.01
+    focus_distance = float(np.linalg.norm(camera_position - camera_look_at_point))
 
-    camera = Camera(camera_position, camera_look_at_point, up_direction, vertical_fov_degrees, aspect_ratio)
+    camera = Camera(camera_position,
+                    camera_look_at_point,
+                    up_direction,
+                    vertical_fov_degrees,
+                    aspect_ratio,
+                    aperture=aperture,
+                    focus_distance=focus_distance,
+                    shutter_open_time=0.0,
+                    shutter_close_time=1.0)
 
     material_ground = Lambertian(np.array([0.8, 0.8, 0.0], dtype=np.float32))
     material_center = Dielectric(1.5)  # glass center
@@ -77,12 +88,12 @@ def main():
     
     world = BVHNode([
         Sphere(
-            center=np.array([0.0, 0.0, -1.0], dtype=np.float32),
+            center=np.array([0.0, 0.0, -0.5], dtype=np.float32),
             radius=0.2,
             material=material_center
         ),
         Sphere(
-            center=np.array([-1.0, 0.0, -2.0], dtype=np.float32),
+            center=np.array([-1.0, 0.0, -1.5], dtype=np.float32),
             radius=0.4,
             material=material_left
         ),
@@ -92,7 +103,7 @@ def main():
             material=material_right
         ),
         Sphere(
-            center=np.array([0.0, -100.5, -1.0], dtype=np.float32),
+            center=np.array([0.0, -100.5, -1.2], dtype=np.float32),
             radius=100.0,
             material=material_rocky_terrain
         ),
@@ -111,7 +122,15 @@ def main():
             texture_xy2=np.array([0.4, 1.0], dtype=np.float32)
         ),
         mesh_instance,
-        Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh)
+        Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh),
+        MovingSphere(
+            center0=np.array([-0.5, 0.0, -0.5], dtype=np.float32),
+            center1=np.array([-0.5, 2.0, -0.5], dtype=np.float32),
+            time0=0.0,
+            time1=1.0,
+            radius=0.3,
+            material=material_ground
+        )
     ])
 
     for row in range(height):
