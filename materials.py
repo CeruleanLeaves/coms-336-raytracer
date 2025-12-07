@@ -25,7 +25,7 @@ class Lambertian(Material):
             scatter_direction = hit_record.normal
 
         if self.texture is not None and hit_record.texture_coordinates is not None:
-            attenuation = self.texture.sample(hit_record.texture_coordinates[0], hit_record.texture_coordinates[1])
+            attenuation = self.texture.sample(hit_record.texture_coordinates[0], hit_record.texture_coordinates[1], hit_record.point)
         else:
             attenuation = self.base_color
         

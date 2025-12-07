@@ -10,7 +10,7 @@ from moving_sphere import MovingSphere
 from quad import Quad
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
-from texture import ImageTexture
+from texture import ImageTexture, PerlinNoiseTexture
 from triangle import Triangle
 from normal_interpolation_objects import smooth_sphere_tris, flat_sphere_tris
 
@@ -96,6 +96,9 @@ def main():
         material=Lambertian(np.array([0.8, 0.8, 0.8], dtype=np.float32)),
     )
 
+    perlin_tex = PerlinNoiseTexture(scale=4.0, base_color=np.array([0.2, 0.6, 0.9], dtype=np.float32))
+    mat_perlin = Lambertian(texture=perlin_tex)
+
     
     world = BVHNode([
         Sphere(
@@ -142,7 +145,11 @@ def main():
             radius=0.3,
             material=material_ground
         ),
-        quad
+        Sphere(
+            center=np.array([-0.8, .7, -1.5], dtype=np.float32),
+            radius=0.4,
+            material=mat_perlin,
+        )
     ])
 
     normal_interpolation_example = BVHNode(smooth_sphere_tris)
@@ -163,7 +170,7 @@ def main():
     image_uint8 = (np.clip(image, 0.0, 1.0) * 255).astype(np.uint8)
 
     rendered_image = Image.fromarray(image_uint8, mode='RGB')
-    rendered_image.save('quad.png')
+    rendered_image.save('output.png')
     print('yayy')
 
 if __name__ == '__main__':
