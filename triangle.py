@@ -14,7 +14,10 @@ class Triangle:
                  material: Material,
                  texture_xy0: np.ndarray | None = None,
                  texture_xy1: np.ndarray | None = None,
-                 texture_xy2: np.ndarray | None = None):
+                 texture_xy2: np.ndarray | None = None,
+                 normal0: np.ndarray | None = None,
+                 normal1: np.ndarray | None = None,
+                 normal2: np.ndarray | None = None):
         self.v0 = v0
         self.v1 = v1
         self.v2 = v2
@@ -25,6 +28,10 @@ class Triangle:
         self.texture_xy0 = texture_xy0
         self.texture_xy1 = texture_xy1
         self.texture_xy2 = texture_xy2
+
+        self.normal0 = None if normal0 is None else normalize(normal0)
+        self.normal1 = None if normal1 is None else normalize(normal1)
+        self.normal2 = None if normal2 is None else normalize(normal2)
     
     def hit(self, ray: Ray, time_min: float, time_max: float) -> HitRecord | None:
         #triple product scaler
@@ -59,7 +66,16 @@ class Triangle:
 
         outward_normal = normalize(self.normal)
         front_face = np.dot(ray.direction, outward_normal) < 0.0
-        normal = outward_normal if front_face else -outward_normal
+        if self.normal0 is not None and self.normal1 is not None and self.normal2 is not None:
+            #phong shading / gouraud-style normal interpolation
+            smooth_normal = normalize(
+                (1 - u - v) * self.normal0
+                + u * self.normal1
+                + v * self.normal2
+            )
+            normal = smooth_normal if front_face else -smooth_normal
+        else:
+            normal = outward_normal if front_face else -outward_normal
 
         texture_xy = None
         if self.texture_xy0 is not None and self.texture_xy1 is not None and self.texture_xy2 is not None:

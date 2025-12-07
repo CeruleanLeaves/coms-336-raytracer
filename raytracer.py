@@ -7,10 +7,12 @@ from camera import Camera
 from materials import Dielectric, Emissive, Lambertian, Metal
 from mesh import Mesh
 from moving_sphere import MovingSphere
+from quad import Quad
 from ray import Ray, normalize, reflect, refract, schlick
 from sphere import Sphere
 from texture import ImageTexture
 from triangle import Triangle
+from normal_interpolation_objects import smooth_sphere_tris, flat_sphere_tris
 
 MAX_DEPTH = 10
 
@@ -85,6 +87,15 @@ def main():
         (0, 2, 3),
     ]
     mesh_instance = Mesh.from_vertices_indices(vertices, indices, material_mesh)
+
+    quad = Quad(
+        v0=np.array([-1.0, 0.0, -1.0], dtype=np.float32),
+        v1=np.array([1.0, 0.0, -1.0], dtype=np.float32),
+        v2=np.array([1.0, 2.0, -1.0], dtype=np.float32),
+        v3=np.array([-1.0, 2.0, -1.0], dtype=np.float32),
+        material=Lambertian(np.array([0.8, 0.8, 0.8], dtype=np.float32)),
+    )
+
     
     world = BVHNode([
         Sphere(
@@ -124,14 +135,17 @@ def main():
         mesh_instance,
         Mesh.load_from_file('stuff_to_load/star.mesh', material_mesh),
         MovingSphere(
-            center0=np.array([-0.5, 0.0, -0.5], dtype=np.float32),
-            center1=np.array([-0.5, 2.0, -0.5], dtype=np.float32),
+            center0=np.array([-1.5, 0.4, -0.9], dtype=np.float32),
+            center1=np.array([-1.5, 0.8, -0.9], dtype=np.float32),
             time0=0.0,
             time1=1.0,
             radius=0.3,
             material=material_ground
-        )
+        ),
+        quad
     ])
+
+    normal_interpolation_example = BVHNode(smooth_sphere_tris)
 
     for row in range(height):
         for col in range(width):
@@ -149,7 +163,7 @@ def main():
     image_uint8 = (np.clip(image, 0.0, 1.0) * 255).astype(np.uint8)
 
     rendered_image = Image.fromarray(image_uint8, mode='RGB')
-    rendered_image.save('output.png')
+    rendered_image.save('quad.png')
     print('yayy')
 
 if __name__ == '__main__':
