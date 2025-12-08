@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from PIL import Image
+import concurrent.futures
+import os
 
 from bvh_node import BVHNode
 from camera import Camera
@@ -37,13 +39,34 @@ def ray_color(ray: Ray, world: BVHNode, depth: int) -> np.ndarray:
     blue  = np.array([0.5, 0.7, 1.0], dtype=np.float32)
     return blueness * blue + (1 - blueness) * white
 
+def render_scanline(y: int,
+                    width: int,
+                    height: int,
+                    samples_per_pixel: int,
+                    camera: Camera,
+                    world: BVHNode) -> tuple[int, np.ndarray]:
+    
+    row = np.zeros((width, 3), dtype=np.float32)
+    for col in range(width):
+        pixel_color = np.array([0, 0, 0], dtype=np.float32)
+        for _ in range(samples_per_pixel):
+            horizontal_percentage = (col + np.random.rand()) / (width - 1)
+            vertical_percentage = (y + np.random.rand()) / (height - 1)
+
+            ray = camera.get_ray(horizontal_percentage, vertical_percentage)
+            pixel_color += ray_color(ray, world, 0)
+
+        pixel_color /= samples_per_pixel    
+        row[col, :] = pixel_color
+    
+    return y, row
+
+
 def main():
 
     width = 400
     height = 225
     samples_per_pixel = 20
-
-    image = np.zeros(shape=(height, width, 3), dtype=np.float32)
 
     aspect_ratio = width / height
     camera_position = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -154,18 +177,20 @@ def main():
 
     normal_interpolation_example = BVHNode(smooth_sphere_tris)
 
-    for row in range(height):
-        for col in range(width):
-            pixel_color = np.array([0, 0, 0], dtype=np.float32)
-            for _ in range(samples_per_pixel):
-                horizontal_percentage = (col + np.random.rand()) / (width - 1)
-                vertical_percentage = (height - 1 - row + np.random.rand()) / (height - 1)
+    image = np.zeros(shape=(height, width, 3), dtype=np.float32)
+    max_workers = os.cpu_count() or 4
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                render_scanline, y, width, height, samples_per_pixel, camera, world
+            )
+            for y in range(height)
+        ]
 
-                ray = camera.get_ray(horizontal_percentage, vertical_percentage)
-                pixel_color += ray_color(ray, world, 0)
+        for future in concurrent.futures.as_completed(futures):
+            y, row = future.result()
 
-            pixel_color /= samples_per_pixel    
-            image[row, col, :] = pixel_color
+            image[height - 1 - y, :, :] = row
 
     image_uint8 = (np.clip(image, 0.0, 1.0) * 255).astype(np.uint8)
 
